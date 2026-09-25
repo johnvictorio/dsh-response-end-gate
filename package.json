@@ -1,0 +1,34 @@
+{
+  "name": "dsh-response-end-gate",
+  "version": "1.0.0",
+  "description": "DSH plugin that requires every conversation turn to end with an explicit response_end tool call, steered back with no retry limit; hot toggle in the session header and in settings.",
+  "type": "module",
+  "main": "index.js",
+  "files": [
+    "index.js",
+    "client.js",
+    "cordis.patch.yml"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web"
+    }
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "cordis",
+    "agent-loop",
+    "turn-control"
+  ],
+  "license": "MIT",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./package.json": "./package.json"
+  }
+}

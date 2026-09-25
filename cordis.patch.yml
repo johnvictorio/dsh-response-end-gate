@@ -1,0 +1,3 @@
+- insert:
+    - id: response-end-gate
+      name: dsh-response-end-gate
