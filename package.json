@@ -1,6 +1,6 @@
 {
   "name": "dsh-response-end-gate",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "DSH plugin that requires every conversation turn to end with an explicit response_end tool call, steered back with no retry limit; hot toggle in the session header and in settings.",
   "type": "module",
   "main": "index.js",

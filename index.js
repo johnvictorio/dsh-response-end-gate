@@ -1,19 +1,17 @@
 import { createUserMessage } from '@deepseek-ai/dsh-llm'
 import { defineTool } from '@deepseek-ai/dsh-tools'
-import { settingsNamespace } from '@deepseek-ai/dsh-settings'
 import z from '@deepseek-ai/schemastery'
 
 export const name = 'dsh-response-end-gate'
 export const inject = ['systemPrompt', 'tools']
 
+export const Config = z.object({
+  enabled: z.boolean().default(true).volatile(),
+})
+
 const SECTION_NAME = 'response-end:gate'
 const SECTION_ORDER = 150
 const TOOL_NAME = 'response_end'
-const NAMESPACE = settingsNamespace('response-end-gate')
-
-const GateSchema = z.object({
-  enabled: z.boolean().default(true),
-})
 
 const RULE_TEXT = [
   'This session enforces a strict turn-ending rule.',
@@ -27,13 +25,12 @@ function steerText(turn) {
   return '[response-end-gate] Did you intend to stop? In this session a reply may only end with a response_end tool call, so turn ' + turn + ' is still open. If you are finished, call response_end now as your last action; otherwise continue your work and close with response_end when you are done. An earlier response_end call does not count for a later stop.'
 }
 
-export function apply(ctx) {
+export function apply(ctx, config) {
   const lastStep = new Map()
   const releasedAt = new Map()
-  let enabled = true
 
   const isGated = (agent) => {
-    if (!enabled) return false
+    if (config.enabled.get() === false) return false
     if (agent === undefined) return false
     const header = agent.session !== undefined ? agent.session.header : undefined
     if (header === undefined) return true
@@ -60,6 +57,7 @@ export function apply(ctx) {
   let disposeTool
 
   const refresh = () => {
+    const enabled = config.enabled.get() !== false
     if (enabled && disposeSection === undefined) {
       disposeSection = ctx.systemPrompt.section({
         name: SECTION_NAME,
@@ -78,33 +76,8 @@ export function apply(ctx) {
     }
   }
 
-  const installSettings = (settings) => {
-    settings.register(NAMESPACE, GateSchema)
-    const readEnabled = () => {
-      const value = settings.get(NAMESPACE)
-      enabled = value === undefined || typeof value !== 'object' ? true : value.enabled !== false
-    }
-    ctx.on('settings/updated', (ns) => {
-      if (ns !== NAMESPACE) return
-      readEnabled()
-      refresh()
-    })
-    readEnabled()
-    refresh()
-  }
-
-  const settings = ctx.get('settings')
-  if (settings !== undefined) {
-    installSettings(settings)
-  } else if (typeof ctx.inject === 'function') {
-    refresh()
-    ctx.inject(['settings'], (sub) => {
-      const provider = sub.get('settings')
-      if (provider !== undefined) installSettings(provider)
-    })
-  } else {
-    refresh()
-  }
+  refresh()
+  ctx.on('loader/volatile-update', () => refresh())
 
   ctx.effect(() => () => {
     if (disposeSection !== undefined) disposeSection()
